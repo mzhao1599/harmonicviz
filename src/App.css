@@ -1,42 +1,361 @@
+/* ─── Base ────────────────────────────────────────────────── */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: #0d0d14;
+  color: #e0d8c8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 #root {
-  max-width: 1280px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+/* ─── Typography ──────────────────────────────────────────── */
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+/* ─── Glass Card ──────────────────────────────────────────── */
+
+.card-glass {
+  background: rgba(18, 18, 28, 0.7);
+  border: 1px solid rgba(201, 168, 76, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color 0.3s ease;
+}
+
+.card-glass:hover {
+  border-color: rgba(201, 168, 76, 0.15);
+}
+
+/* ─── Buttons ─────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  outline: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.4);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.04);
+  color: #9a9088;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0d8c8;
+}
+
+.btn-ghost.active {
+  background: rgba(201, 168, 76, 0.12);
+  color: #c9a84c;
+  border-color: rgba(201, 168, 76, 0.25);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #c9a84c 0%, #b8953e 100%);
+  color: #0d0d14;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 2px 12px rgba(201, 168, 76, 0.2);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #d4b45a 0%, #c9a84c 100%);
+  box-shadow: 0 4px 20px rgba(201, 168, 76, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-playing {
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(76, 175, 80, 0.25);
+  animation: pulse-ring 2s ease-in-out infinite;
+}
+
+.btn-playing:hover {
+  background: linear-gradient(135deg, #66bb6a 0%, #4caf50 100%);
+}
+
+.btn-sm {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.75rem;
+}
+
+.btn-icon {
+  padding: 0.5rem;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.btn-disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* ─── Toggle Pill ─────────────────────────────────────────── */
+
+.toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  color: #6b6460;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.toggle-pill.on {
+  background: rgba(201, 168, 76, 0.1);
+  color: #c9a84c;
+  border-color: rgba(201, 168, 76, 0.2);
+}
+
+.toggle-pill .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  transition: all 0.2s ease;
+}
+
+/* ─── Section Labels ──────────────────────────────────────── */
+
+.section-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5a534e;
+  margin-bottom: 0.75rem;
+}
+
+/* ─── Pitch Display ───────────────────────────────────────── */
+
+.pitch-note {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 3rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #c9a84c, #e0c876);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.pitch-freq {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.875rem;
+  color: #6b6460;
+  letter-spacing: 0.04em;
+}
+
+.pitch-cents {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #5a534e;
+}
+
+/* ─── Range Slider ────────────────────────────────────────── */
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a84c, #b8953e);
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  box-shadow: 0 2px 16px rgba(201, 168, 76, 0.5);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a84c, #b8953e);
+  box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+  cursor: pointer;
+  border: none;
+}
+
+/* ─── Harmonic Card ───────────────────────────────────────── */
+
+.harmonic-card {
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.harmonic-card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.harmonic-card.selected {
+  background: rgba(201, 168, 76, 0.06);
+  border-color: rgba(201, 168, 76, 0.2);
+}
+
+/* ─── Difficulty Badges ───────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+  font-style: italic;
+}
+
+.badge-easy {
+  background: rgba(76, 175, 80, 0.1);
+  color: #66bb6a;
+}
+
+.badge-medium {
+  background: rgba(255, 183, 77, 0.1);
+  color: #ffb74d;
+}
+
+.badge-hard {
+  background: rgba(239, 83, 80, 0.1);
+  color: #ef5350;
+}
+
+.badge-unreachable {
+  background: rgba(255, 255, 255, 0.04);
+  color: #5a534e;
+}
+
+/* ─── Position Guide ──────────────────────────────────────── */
+
+.guide-box {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(201, 168, 76, 0.04);
+  border: 1px solid rgba(201, 168, 76, 0.1);
+  font-size: 0.8125rem;
+}
+
+/* ─── SVG Glow Filter ─────────────────────────────────────── */
+
+@keyframes pulse-ring {
+
+  0%,
+  100% {
+    box-shadow: 0 2px 12px rgba(76, 175, 80, 0.25);
+  }
+
+  50% {
+    box-shadow: 0 2px 24px rgba(76, 175, 80, 0.4);
+  }
+}
+
+@keyframes subtle-glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgba(201, 168, 76, 0.3));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 8px rgba(201, 168, 76, 0.5));
+  }
+}
+
+.string-glow {
+  animation: subtle-glow 1.5s ease-in-out infinite;
+}
+
+/* ─── Scrollbar ───────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ─── Easter egg ──────────────────────────────────────────── */
+
+.easter-egg {
+  font-style: italic;
+  font-size: 0.75rem;
+  color: #3d3832;
+  letter-spacing: 0.06em;
   text-align: center;
-}
-
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
-}
-
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+  margin-top: 1rem;
 }
