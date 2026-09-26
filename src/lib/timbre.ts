@@ -113,3 +113,42 @@ export function displacementEnvelope(modes: Mode[], points: number, timeSamples 
   }
   return envelope;
 }
+
+/**
+ * Inharmonicity coefficient used by the stiff-string option. Real values depend on
+ * the string's core, winding, tension and length, so this is an illustrative
+ * value, not a measurement (for comparison, piano bass strings are around 2 × 10⁻⁴).
+ */
+export const STIFF_STRING_B = 1e-4;
+
+/** Instruments offered the stiff-string option: their thick, wound low strings are the stiffest. */
+export const STIFF_STRING_INSTRUMENTS: readonly string[] = ['cello', 'bass'];
+
+/** "1.0 × 10⁻⁴" */
+export function formatB(B: number): string {
+  const exponent = Math.floor(Math.log10(B));
+  const superscript = String(exponent).replace('-', '⁻').replace(/\d/g, d => '⁰¹²³⁴⁵⁶⁷⁸⁹'[+d]);
+  return `${(B / 10 ** exponent).toFixed(1)} × 10${superscript}`;
+}
+
+/**
+ * Fundamental (before the stiffness correction) and inharmonicity of the vibrating
+ * length. The open string is tuned so that its lowest mode sounds `openFreq`, so
+ * f0 = openFreq / √(1 + B). Stopping the string at `stop` shortens it to 1 − stop:
+ * f0 scales as 1/L and B as 1/L².
+ */
+export function vibratingLength(openFreq: number, stop: number, B: number): { f0: number; B: number } {
+  const length = 1 - stop;
+  return { f0: openFreq / Math.sqrt(1 + B) / length, B: B / (length * length) };
+}
+
+/** Sounding frequency of harmonic n: the lowest mode left by a touch at 1/n, f_n = n·f0·√(1 + B·n²). */
+export function harmonicFrequency(openFreq: number, n: number, B: number, stop = 0): number {
+  const segment = vibratingLength(openFreq, stop, B);
+  return modeFrequency(n, segment.f0, segment.B);
+}
+
+/** How far a stiff string's mode k is sharp of k times its fundamental, in cents. */
+export function inharmonicityCents(k: number, B: number): number {
+  return 600 * Math.log2((1 + B * k * k) / (1 + B));
+}

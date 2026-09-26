@@ -9,9 +9,11 @@ interface Props {
   onToggleVisualize: () => void;
   showFrets: boolean;
   onToggleFrets: () => void;
+  /** Null when the instrument has no stiff-string option. */
+  stiff: { on: boolean; B: string; onToggle: () => void } | null;
 }
 
-export function Controls({ playMode, onTogglePlay, showVisualize, onToggleVisualize, showFrets, onToggleFrets }: Props) {
+export function Controls({ playMode, onTogglePlay, showVisualize, onToggleVisualize, showFrets, onToggleFrets, stiff }: Props) {
   return (
     <section className="card-glass" style={{ padding: '1rem 1.5rem', marginBottom: '1rem' }}>
       <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -43,6 +45,18 @@ export function Controls({ playMode, onTogglePlay, showVisualize, onToggleVisual
           <span className="dot" aria-hidden="true" />
           Frets
         </button>
+
+        {stiff && (
+          <button
+            onClick={stiff.onToggle}
+            aria-pressed={stiff.on}
+            className={`toggle-pill ${stiff.on ? 'on' : ''}`}
+            title="Model the string's bending stiffness: f_k = k·f0·√(1 + B·k²)"
+          >
+            <span className="dot" aria-hidden="true" />
+            Stiff string <span className="pill-note">B = {stiff.B}</span>
+          </button>
+        )}
 
         <CopyLinkButton />
       </div>

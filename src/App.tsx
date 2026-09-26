@@ -9,7 +9,16 @@ import {
   openStringFrequency,
   type InstrumentId,
 } from './lib/music';
-import { partialAmplitudes, stringModes } from './lib/timbre';
+import {
+  STIFF_STRING_B,
+  STIFF_STRING_INSTRUMENTS,
+  formatB,
+  harmonicFrequency,
+  inharmonicityCents,
+  partialAmplitudes,
+  stringModes,
+  vibratingLength,
+} from './lib/timbre';
 import { decodeState, encodeState } from './lib/urlState';
 import type { FingerInputMode, ListenMode, PlayMode } from './types';
 import { ToneEngine } from './audio/ToneEngine';
@@ -38,6 +47,7 @@ export default function App() {
   const [fingerCents, setFingerCents] = useState(initial.stopMode === 'cents' ? initial.stop : 0);
   const [fingerInputMode, setFingerInputMode] = useState<FingerInputMode>(initial.stopMode);
   const [listen, setListen] = useState<ListenMode>('touched');
+  const [stiff, setStiff] = useState(initial.stiff);
 
   const engineRef = useRef<ToneEngine | null>(null);
   const engine = () => (engineRef.current ??= new ToneEngine());
@@ -46,17 +56,25 @@ export default function App() {
   const centsAboveOpen = fingerInputMode === 'fret' ? fingerPosition * 100 : fingerCents;
   const isArtificial = centsAboveOpen > 0;
   const stopPosition = centsToPosition(centsAboveOpen);
-  const artificial = artificialHarmonics(openFreq, centsAboveOpen);
   const naturalPoints = naturalTouchPoints(harmonicNumber);
 
-  const currentFreq = isArtificial
-    ? artificial[artificialHarmonicIndex].resultFreq
-    : openFreq * harmonicNumber;
+  // Stiff-string model: B > 0 sharpens every harmonic above the first.
+  const stiffAvailable = STIFF_STRING_INSTRUMENTS.includes(instrument);
+  const B = stiff && stiffAvailable ? STIFF_STRING_B : 0;
+  const idealArtificial = artificialHarmonics(openFreq, centsAboveOpen);
+  const artificial = B === 0 ? idealArtificial : idealArtificial.map(h => {
+    const resultFreq = harmonicFrequency(openFreq, h.number, B, stopPosition);
+    return { ...h, resultFreq, resultNote: frequencyToNote(resultFreq) };
+  });
+
+  const currentHarmonic = isArtificial ? artificialHarmonicIndex + 1 : harmonicNumber;
+  const idealFreq = isArtificial ? idealArtificial[artificialHarmonicIndex].resultFreq : openFreq * harmonicNumber;
+  const currentFreq = B === 0 ? idealFreq : harmonicFrequency(openFreq, currentHarmonic, B, stopPosition);
   const noteInfo = frequencyToNote(currentFreq);
 
   // The vibrating length is the whole string, or the part between the stopping
   // finger and the bridge. Touch points are fractions of that length.
-  const vibratingF0 = isArtificial ? artificial[0].resultFreq : openFreq;
+  const segment = vibratingLength(openFreq, stopPosition, B);
   const touch = isArtificial
     ? (artificialHarmonicIndex === 0 ? null : 1 / (artificialHarmonicIndex + 1))
     : (harmonicNumber === 1 ? null : selectedPosition ?? 1 / harmonicNumber);
@@ -66,7 +84,10 @@ export default function App() {
       ? `1/${harmonicNumber} of the string`
       : `${naturalPoints.find(p => p.position === selectedPosition)?.numerator ?? 1}/${harmonicNumber} of the string`;
 
-  const modes = useMemo(() => stringModes({ f0: vibratingF0, touch }), [vibratingF0, touch]);
+  const modes = useMemo(
+    () => stringModes({ f0: segment.f0, B: segment.B, touch }),
+    [segment.f0, segment.B, touch],
+  );
   const heard = touch !== null && listen === 'open' ? 'open' : 'touched';
 
   const heardModes = useMemo(
@@ -95,6 +116,7 @@ export default function App() {
     stopMode: fingerInputMode,
     stop: fingerInputMode === 'fret' ? fingerPosition : fingerCents,
     artificial: artificialHarmonicIndex + 1,
+    stiff,
   });
 
   useEffect(() => {
@@ -177,9 +199,10 @@ export default function App() {
         onToggleVisualize={() => setShowVisualize(v => !v)}
         showFrets={showFrets}
         onToggleFrets={() => setShowFrets(v => !v)}
+        stiff={stiffAvailable ? { on: stiff, B: formatB(STIFF_STRING_B), onToggle: () => setStiff(v => !v) } : null}
       />
 
-      <PitchDisplay noteInfo={noteInfo} />
+      <PitchDisplay noteInfo={noteInfo} stiffCents={B === 0 ? null : 1200 * Math.log2(currentFreq / idealFreq)} />
 
       <StringDiagram
         openFreq={openFreq}
@@ -203,6 +226,7 @@ export default function App() {
         untouchedLabel={isArtificial ? 'Stopped, no touch' : 'Open string'}
         listen={heard}
         onListenChange={setListen}
+        stiffNote={B === 0 ? null : `Stiff string, B = ${formatB(segment.B)}${isArtificial ? ' for the stopped length (B scales as 1/L²)' : ''} (an illustrative value): f_k = k·f₀·√(1 + B·k²), so mode ${modes[modes.length - 1].k} is ${inharmonicityCents(modes[modes.length - 1].k, segment.B).toFixed(1)}¢ sharp of ${modes[modes.length - 1].k}× the fundamental.`}
       />
 
       {!isArtificial && (

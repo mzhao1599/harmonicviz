@@ -12,6 +12,8 @@ interface Props {
   untouchedLabel: string;
   listen: ListenMode;
   onListenChange: (listen: ListenMode) => void;
+  /** Inharmonicity note for a stiff string, or null for an ideal string. */
+  stiffNote: string | null;
 }
 
 const WIDTH = 880;
@@ -32,7 +34,7 @@ function barPath(x: number, w: number, top: number, base: number) {
 
 const hz = (f: number) => (f >= 1000 ? `${(f / 1000).toFixed(2)} kHz` : `${f.toFixed(1)} Hz`);
 
-export function SpectrumChart({ modes, touched, touchLabel, untouchedLabel, listen, onListenChange }: Props) {
+export function SpectrumChart({ modes, touched, touchLabel, untouchedLabel, listen, onListenChange, stiffNote }: Props) {
   const [hover, setHover] = useState<number | null>(null);
   const [showTable, setShowTable] = useState(false);
   const slot = plotW / Math.max(modes.length, 1);
@@ -50,6 +52,8 @@ export function SpectrumChart({ modes, touched, touchLabel, untouchedLabel, list
             {touched
               ? <>Touching at {touchLabel} keeps only the modes with a node there, sin(kπx) = 0: {surviving.length} of {modes.length} partials.</>
               : <>Nothing touches the string, so all {modes.length} modes sound.</>}
+            {' '}Bowed-string (Helmholtz) spectrum: mode k has amplitude 1/k at the bridge.
+            {stiffNote && <> {stiffNote}</>}
           </p>
         </div>
         <div className="segmented" role="group" aria-label="Which sound to play">

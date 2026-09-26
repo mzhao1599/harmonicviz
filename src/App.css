@@ -156,6 +156,14 @@ body {
   border-color: rgba(201, 168, 76, 0.2);
 }
 
+.pill-note {
+  margin-left: 0.25rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: 'JetBrains Mono', monospace;
+  opacity: 0.75;
+}
+
 .toggle-pill .dot {
   width: 6px;
   height: 6px;

@@ -2,15 +2,19 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_MODES,
   MAX_PARTIAL_FREQ,
+  STIFF_STRING_B,
   displacement,
   displacementEnvelope,
+  harmonicFrequency,
   hasNodeAt,
   helmholtzBridgeForce,
   helmholtzDisplacement,
+  inharmonicityCents,
   levelDb,
   modeFrequency,
   partialAmplitudes,
   stringModes,
+  vibratingLength,
 } from './timbre';
 import { naturalTouchPoints, noteToFrequency } from './music';
 
@@ -89,9 +93,39 @@ describe('bowed-string spectrum', () => {
   });
 });
 
-describe('modeFrequency', () => {
-  it('is k·f0 for an ideal string', () => {
+describe('stiff string', () => {
+  it('is k·f0 for an ideal string and k·f0·√(1 + B·k²) for a stiff one', () => {
     expect(modeFrequency(5, 100)).toBe(500);
+    expect(modeFrequency(5, 100, 1e-3)).toBeCloseTo(500 * Math.sqrt(1.025), 9);
+  });
+
+  it('changes nothing when B = 0', () => {
+    expect(harmonicFrequency(G3, 4, 0)).toBeCloseTo(G3 * 4, 9);
+    expect(harmonicFrequency(G3, 4, 0, 1 - 2 ** (-2 / 12))).toBeCloseTo(880, 9);
+  });
+
+  it('keeps the open string in tune and sharpens the higher harmonics', () => {
+    const C2 = noteToFrequency('C2')!;
+    const B = STIFF_STRING_B;
+    expect(harmonicFrequency(C2, 1, B)).toBeCloseTo(C2, 9);
+    const cents = (n: number) => 1200 * Math.log2(harmonicFrequency(C2, n, B) / (n * C2));
+    expect(cents(2)).toBeCloseTo(inharmonicityCents(2, B), 9);
+    expect(cents(4)).toBeCloseTo(1.30, 2);
+    expect(cents(16)).toBeCloseTo(21.79, 2);
+    // Monotonic: every higher harmonic is sharper.
+    for (let n = 2; n < 16; n++) expect(cents(n + 1)).toBeGreaterThan(cents(n));
+  });
+
+  it('scales B by 1/L² when the string is stopped', () => {
+    const half = vibratingLength(100, 0.5, STIFF_STRING_B);
+    expect(half.B).toBeCloseTo(4 * STIFF_STRING_B, 12);
+    expect(half.f0).toBeCloseTo((2 * 100) / Math.sqrt(1 + STIFF_STRING_B), 9);
+  });
+
+  it('does not move the nodes: the same modes survive the touch', () => {
+    const ideal = stringModes({ f0: G3, touch: 1 / 3 }).filter(m => m.survives).map(m => m.k);
+    const stiff = stringModes({ f0: G3, touch: 1 / 3, B: STIFF_STRING_B }).filter(m => m.survives).map(m => m.k);
+    expect(stiff).toEqual(ideal.filter(k => modeFrequency(k, G3, STIFF_STRING_B) <= MAX_PARTIAL_FREQ));
   });
 });
 

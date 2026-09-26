@@ -2,6 +2,7 @@
 //   ?instrument=violin&string=G3&harmonic=4&touch=3        natural harmonic #4, touched at 3/4
 //   ?instrument=violin&string=G3&fret=2&artificial=4        stopped at semitone 2, artificial #4
 //   ?instrument=cello&string=C2&cents=250&artificial=3      stopped 250 cents up, artificial #3
+//   ...&stiff=1                                             stiff-string model (cello and bass)
 // Anything missing or invalid falls back to the default.
 
 import {
@@ -12,6 +13,7 @@ import {
   isInstrumentId,
   type InstrumentId,
 } from './music';
+import { STIFF_STRING_INSTRUMENTS } from './timbre';
 import type { FingerInputMode } from '../types';
 
 export interface ShareState {
@@ -26,6 +28,8 @@ export interface ShareState {
   stop: number;
   /** Artificial harmonic number, 1..8. */
   artificial: number;
+  /** Stiff-string model (cello and bass only). */
+  stiff: boolean;
 }
 
 export const DEFAULT_STATE: ShareState = {
@@ -36,6 +40,7 @@ export const DEFAULT_STATE: ShareState = {
   stopMode: 'fret',
   stop: 0,
   artificial: 1,
+  stiff: false,
 };
 
 /** Parse a whole number in [min, max], or return undefined. */
@@ -56,6 +61,8 @@ export function decodeState(search: string): ShareState {
   }
   const string = params.get('string');
   if (string && INSTRUMENT_STRINGS[state.instrument].includes(string)) state.string = string;
+
+  state.stiff = params.get('stiff') === '1' && STIFF_STRING_INSTRUMENTS.includes(state.instrument);
 
   const cents = intIn(params.get('cents'), 0, 1200);
   const fret = intIn(params.get('fret'), 0, 12);
@@ -87,5 +94,6 @@ export function encodeState(state: ShareState): string {
     params.set('harmonic', String(state.harmonic));
     if (state.touch !== null) params.set('touch', String(state.touch));
   }
+  if (state.stiff && STIFF_STRING_INSTRUMENTS.includes(state.instrument)) params.set('stiff', '1');
   return params.toString();
 }

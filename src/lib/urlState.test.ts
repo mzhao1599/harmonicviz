@@ -8,6 +8,7 @@ describe('shareable URL state', () => {
       { ...DEFAULT_STATE, instrument: 'cello', string: 'G2', harmonic: 5, touch: 2 },
       { ...DEFAULT_STATE, instrument: 'violin', string: 'G3', stop: 2, artificial: 4 },
       { ...DEFAULT_STATE, instrument: 'bass', string: 'E1', stopMode: 'cents', stop: 250, artificial: 3 },
+      { ...DEFAULT_STATE, instrument: 'cello', string: 'C2', harmonic: 7, touch: 3, stiff: true },
     ];
     for (const s of states) expect(decodeState(encodeState(s))).toEqual(s);
   });
@@ -33,6 +34,12 @@ describe('shareable URL state', () => {
     expect(decodeState('?harmonic=4&touch=2').touch).toBeNull(); // 2/4 is the 2nd harmonic
     expect(decodeState('?harmonic=4&touch=4').touch).toBeNull();
     expect(decodeState('?harmonic=6&touch=5').touch).toBe(5);
+  });
+
+  it('only turns on the stiff string for cello and bass', () => {
+    expect(decodeState('?instrument=bass&stiff=1').stiff).toBe(true);
+    expect(decodeState('?instrument=violin&stiff=1').stiff).toBe(false);
+    expect(encodeState({ ...DEFAULT_STATE, stiff: true })).not.toContain('stiff');
   });
 
   it('resets the natural harmonic when the string is stopped', () => {
