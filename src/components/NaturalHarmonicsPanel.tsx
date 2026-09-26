@@ -11,6 +11,7 @@ import {
   type TouchPoint,
 } from '../lib/music';
 import { DifficultyBadge } from './DifficultyBadge';
+import { SectionTitle } from './SectionTitle';
 
 interface Props {
   openFreq: number;
@@ -22,20 +23,19 @@ interface Props {
   onHarmonicChange: (n: number) => void;
 }
 
-const mono = "'JetBrains Mono', monospace";
-
 export function NaturalHarmonicsPanel({
   openFreq, harmonicNumber, noteInfo, touchPoints, selectedPosition, onSelectPosition, onHarmonicChange,
 }: Props) {
   const difficulty = naturalDifficulty(harmonicNumber);
+  const offset = selectedPosition === null ? null : nearestSemitone(selectedPosition);
 
   return (
-    <section className="card-glass" style={{ padding: '1.5rem', marginBottom: '1rem' }}>
-      <div className="section-label">Natural Harmonics</div>
+    <section className="card" aria-labelledby="natural-title">
+      <SectionTitle id="natural-title">Natural harmonics</SectionTitle>
 
-      {/* Navigation */}
-      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div className="harmonic-nav">
         <button
+          type="button"
           onClick={() => onHarmonicChange(harmonicNumber - 1)}
           disabled={harmonicNumber === 1}
           aria-label="Previous harmonic"
@@ -44,6 +44,7 @@ export function NaturalHarmonicsPanel({
           <ChevronLeft size={16} aria-hidden="true" />
         </button>
         <button
+          type="button"
           onClick={() => onHarmonicChange(1)}
           className="btn btn-ghost btn-icon"
           title="Reset"
@@ -52,6 +53,7 @@ export function NaturalHarmonicsPanel({
           <RotateCcw size={14} aria-hidden="true" />
         </button>
         <button
+          type="button"
           onClick={() => onHarmonicChange(harmonicNumber + 1)}
           disabled={harmonicNumber === MAX_NATURAL_HARMONIC}
           aria-label="Next harmonic"
@@ -59,93 +61,71 @@ export function NaturalHarmonicsPanel({
         >
           <ChevronRight size={16} aria-hidden="true" />
         </button>
+        <span className="harmonic-count">{harmonicNumber} / {MAX_NATURAL_HARMONIC}</span>
       </div>
 
-      {harmonicNumber === MAX_NATURAL_HARMONIC && (
-        <div className="easter-egg">leave the rest to roman kim...</div>
-      )}
-
-      {/* Info panel */}
-      <div style={{
-        padding: '1.25rem',
-        borderRadius: '10px',
-        background: 'rgba(201, 168, 76, 0.04)',
-        border: '1px solid rgba(201, 168, 76, 0.1)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: mono, fontSize: '1.25rem', fontWeight: 600, color: '#c9a84c' }}>
-            #{harmonicNumber}
-          </span>
-          <span style={{ fontSize: '0.9375rem', color: '#e0d8c8' }}>
-            {HARMONIC_NAMES[harmonicNumber]}
-          </span>
+      <div className="info-panel">
+        <div className="info-heading">
+          <span className="harmonic-number">#{harmonicNumber}</span>
+          <span className="harmonic-name">{HARMONIC_NAMES[harmonicNumber]}</span>
         </div>
 
-        <div style={{ fontFamily: mono, fontSize: '0.8125rem', color: '#9a9088', marginBottom: '0.75rem' }}>
+        <div className="info-line">
           {noteInfo.note} · {noteInfo.freq.toFixed(2)} Hz
           {Math.abs(noteInfo.cents) > 0.01 && (
-            <span style={{ marginLeft: '0.5rem', color: '#6b6460' }}>
-              {noteInfo.cents > 0 ? '+' : ''}{noteInfo.cents.toFixed(2)}¢
-            </span>
+            <span className="muted">{noteInfo.cents > 0 ? '+' : ''}{noteInfo.cents.toFixed(2)}¢</span>
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <div className="difficulty">
           <DifficultyBadge level={difficulty} />
-          <span style={{ fontSize: '0.75rem', color: '#6b6460' }}>{DIFFICULTY_LABELS[difficulty]}</span>
+          <span>{DIFFICULTY_LABELS[difficulty]}</span>
         </div>
 
         {harmonicNumber === 1 ? (
-          <div style={{ fontSize: '0.8125rem', color: '#9a9088' }}>
-            Play the open string — no finger placement needed.
-          </div>
+          <p className="hint">Play the open string — no finger placement needed.</p>
         ) : (
           <>
-            <div style={{ fontSize: '0.8125rem', color: '#9a9088', marginBottom: '0.5rem' }}>
-              Touch the string lightly at:
-            </div>
-            <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
+            <p className="hint">Touch the string lightly at:</p>
+            <div className="button-row">
               {touchPoints.map((point, i) => (
                 <button
                   key={i}
+                  type="button"
                   onClick={() => onSelectPosition(point.position)}
                   aria-pressed={selectedPosition === point.position}
                   aria-label={`Touch at ${point.numerator}/${point.denominator} of the string`}
-                  className={`btn btn-sm font-mono ${selectedPosition === point.position ? 'btn-ghost active' : 'btn-ghost'}`}
-                  style={{ fontFamily: mono }}
+                  className={`btn btn-sm btn-ghost btn-mono ${selectedPosition === point.position ? 'active' : ''}`}
                 >
                   {point.numerator}/{point.denominator}
                 </button>
               ))}
             </div>
 
-            {selectedPosition !== null && (() => {
-              const offset = nearestSemitone(selectedPosition);
-              const fretNote = frequencyToNote(frequencyAtSemitone(openFreq, offset.nearestFret));
-              return (
-                <div className="guide-box" style={{ marginTop: '0.75rem' }} aria-live="polite">
-                  <div style={{ fontSize: '0.8125rem', color: '#e0d8c8', marginBottom: '0.375rem' }}>
-                    <span style={{ color: '#6b6460' }}>Nearest:</span>{' '}
-                    <span style={{ fontFamily: mono }}>
-                      {offset.nearestFret === 0 ? 'Open string' : `Fret ${offset.nearestFret}`}
-                    </span>
-                    {' '}
-                    <span style={{ color: '#9a9088' }}>({fretNote.note})</span>
-                  </div>
-                  <div style={{ fontSize: '0.8125rem', color: '#e0d8c8' }}>
-                    <span style={{ color: '#6b6460' }}>Adjustment:</span>{' '}
-                    <span style={{ fontFamily: mono }}>
-                      {Math.abs(offset.cents) < 0.01
-                        ? 'Exact'
-                        : `${Math.abs(offset.cents).toFixed(2)}¢ ${offset.cents > 0 ? 'higher' : 'lower'}`}
-                    </span>
-                  </div>
+            {offset && (
+              <div className="guide-box" aria-live="polite">
+                <div>
+                  <span className="label">Nearest:</span>{' '}
+                  <span className="mono">{offset.nearestFret === 0 ? 'Open string' : `Fret ${offset.nearestFret}`}</span>{' '}
+                  <span className="note">({frequencyToNote(frequencyAtSemitone(openFreq, offset.nearestFret)).note})</span>
                 </div>
-              );
-            })()}
+                <div>
+                  <span className="label">Adjustment:</span>{' '}
+                  <span className="mono">
+                    {Math.abs(offset.cents) < 0.01
+                      ? 'Exact'
+                      : `${Math.abs(offset.cents).toFixed(2)}¢ ${offset.cents > 0 ? 'higher' : 'lower'}`}
+                  </span>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
+
+      {harmonicNumber === MAX_NATURAL_HARMONIC && (
+        <div className="easter-egg">leave the rest to roman kim...</div>
+      )}
     </section>
   );
 }

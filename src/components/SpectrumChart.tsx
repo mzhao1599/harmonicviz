@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { levelDb, type Mode } from '../lib/timbre';
 import type { ListenMode } from '../types';
+import { SectionTitle } from './SectionTitle';
 
 interface Props {
   modes: Mode[];
@@ -16,8 +17,8 @@ interface Props {
   stiffNote: string | null;
 }
 
-const WIDTH = 880;
-const HEIGHT = 190;
+const WIDTH = 560;
+const HEIGHT = 200;
 const PAD = { left: 40, right: 8, top: 20, bottom: 30 };
 const FLOOR_DB = -36;
 const TICKS_DB = [0, -12, -24, -36];
@@ -44,19 +45,18 @@ export function SpectrumChart({ modes, touched, touchLabel, untouchedLabel, list
   const hovered = hover === null ? null : modes.find(m => m.k === hover) ?? null;
 
   return (
-    <section className="card-glass spectrum" aria-labelledby="spectrum-title">
+    <section className="card spectrum" aria-labelledby="spectrum-title">
+      <SectionTitle id="spectrum-title">Timbre · partials of the string</SectionTitle>
+      <p className="spectrum-caption">
+        {touched
+          ? <>Touching at {touchLabel} keeps only the modes with a node there, sin(kπx) = 0: {surviving.length} of {modes.length} partials.</>
+          : <>Nothing touches the string, so all {modes.length} modes sound.</>}
+        {' '}Bowed-string (Helmholtz) spectrum: mode k has amplitude 1/k at the bridge.
+        {stiffNote && <> {stiffNote}</>}
+      </p>
       <div className="spectrum-head">
-        <div>
-          <div className="section-label" id="spectrum-title">Timbre · partials of the string</div>
-          <p className="spectrum-caption">
-            {touched
-              ? <>Touching at {touchLabel} keeps only the modes with a node there, sin(kπx) = 0: {surviving.length} of {modes.length} partials.</>
-              : <>Nothing touches the string, so all {modes.length} modes sound.</>}
-            {' '}Bowed-string (Helmholtz) spectrum: mode k has amplitude 1/k at the bridge.
-            {stiffNote && <> {stiffNote}</>}
-          </p>
-        </div>
         <div className="segmented" role="group" aria-label="Which sound to play">
+          <span className="segmented-label" aria-hidden="true">Hear</span>
           <button
             type="button"
             className={`btn btn-sm btn-ghost ${listen === 'touched' ? 'active' : ''}`}

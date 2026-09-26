@@ -6,6 +6,7 @@ import {
   centsToPosition,
   frequencyToNote,
   naturalTouchPoints,
+  noteToFrequency,
   openStringFrequency,
   type InstrumentId,
 } from './lib/music';
@@ -29,6 +30,8 @@ import { StringDiagram } from './components/StringDiagram';
 import { NaturalHarmonicsPanel } from './components/NaturalHarmonicsPanel';
 import { ArtificialHarmonicsPanel } from './components/ArtificialHarmonicsPanel';
 import { SpectrumChart } from './components/SpectrumChart';
+import { HeroStrings } from './components/HeroStrings';
+import { HarmonicContext } from './harmonicContext';
 
 export default function App() {
   // The instrument, string, harmonic and stop come from the URL, so links can be shared.
@@ -53,6 +56,10 @@ export default function App() {
   const engine = () => (engineRef.current ??= new ToneEngine());
 
   const openFreq = openStringFrequency(instrument, selectedString);
+  const heroStrings = useMemo(
+    () => INSTRUMENT_STRINGS[instrument].map(name => ({ name, freq: noteToFrequency(name) ?? 196 })),
+    [instrument],
+  );
   const centsAboveOpen = fingerInputMode === 'fret' ? fingerPosition * 100 : fingerCents;
   const isArtificial = centsAboveOpen > 0;
   const stopPosition = centsToPosition(centsAboveOpen);
@@ -168,91 +175,113 @@ export default function App() {
     }
   };
 
+  const stopLabel = fingerInputMode === 'fret' ? `semitone ${fingerPosition}` : `${fingerCents}¢`;
+  const pitchContext = isArtificial
+    ? `Artificial #${currentHarmonic} · ${selectedString} stopped at ${stopLabel}`
+    : `Harmonic #${harmonicNumber} of the ${selectedString} string`;
+
   return (
-    <div style={{ minHeight: '100vh' }}>
-      <header style={{ marginBottom: '2.5rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 300, letterSpacing: '0.08em', color: '#e0d8c8', margin: 0 }}>
-          Harmonic<span style={{ color: '#c9a84c', fontWeight: 600 }}>Viz</span>
-        </h1>
-        <p style={{
-          fontSize: '0.6875rem',
-          letterSpacing: '0.15em',
-          textTransform: 'uppercase',
-          color: '#5a534e',
-          marginTop: '0.25rem',
-        }}>
-          String Harmonic Visualizer
-        </p>
-      </header>
+    <HarmonicContext.Provider value={currentHarmonic}>
+      <main className="layout">
+        <header className="card hero">
+          <div className="hero-top">
+            <div>
+              <h1 className="wordmark">Harmonic<em>Viz</em></h1>
+              <p className="tagline">Natural and artificial harmonics on violin, viola, cello and double bass.</p>
+            </div>
+            <p className="hero-note">
+              <span className="for-mouse"><b>Rest the pointer on a string</b> to touch it lightly, then <b>click to pluck</b></span>
+              <span className="for-touch"><b>Hold a finger on a string</b> to touch it lightly; <b>each tap plucks</b></span>{' '}
+              near the bridge: only modes with a node under the finger keep ringing (extra damping ∝ sin²(kπx)).
+              The open strings also ring in sympathy with what you play.
+            </p>
+          </div>
+          <HeroStrings strings={heroStrings} selected={selectedString} onSelect={setSelectedString} sounding={partials} />
+        </header>
 
-      <InstrumentPicker
-        instrument={instrument}
-        selectedString={selectedString}
-        onInstrumentChange={changeInstrument}
-        onStringChange={setSelectedString}
-      />
+        <section className="card toolbar" aria-label="Instrument, string and view options">
+          <InstrumentPicker
+            instrument={instrument}
+            selectedString={selectedString}
+            onInstrumentChange={changeInstrument}
+            onStringChange={setSelectedString}
+          />
+          <Controls
+            showVisualize={showVisualize}
+            onToggleVisualize={() => setShowVisualize(v => !v)}
+            showFrets={showFrets}
+            onToggleFrets={() => setShowFrets(v => !v)}
+            stiff={stiffAvailable ? { on: stiff, B: formatB(STIFF_STRING_B), onToggle: () => setStiff(v => !v) } : null}
+          />
+        </section>
 
-      <Controls
-        playMode={playMode}
-        onTogglePlay={togglePlay}
-        showVisualize={showVisualize}
-        onToggleVisualize={() => setShowVisualize(v => !v)}
-        showFrets={showFrets}
-        onToggleFrets={() => setShowFrets(v => !v)}
-        stiff={stiffAvailable ? { on: stiff, B: formatB(STIFF_STRING_B), onToggle: () => setStiff(v => !v) } : null}
-      />
-
-      <PitchDisplay noteInfo={noteInfo} stiffCents={B === 0 ? null : 1200 * Math.log2(currentFreq / idealFreq)} />
-
-      <StringDiagram
-        openFreq={openFreq}
-        playMode={playMode}
-        showVisualize={showVisualize}
-        showFrets={showFrets}
-        waveModes={heardModes}
-        stopPosition={stopPosition}
-        naturalPoints={naturalPoints}
-        selectedPosition={selectedPosition}
-        onSelectPosition={setSelectedPosition}
-        artificialPositions={isArtificial ? artificial.map(h => h.position) : []}
-        artificialIndex={artificialHarmonicIndex}
-        onSelectArtificial={setArtificialHarmonicIndex}
-      />
-
-      <SpectrumChart
-        modes={modes}
-        touched={touch !== null}
-        touchLabel={touchLabel}
-        untouchedLabel={isArtificial ? 'Stopped, no touch' : 'Open string'}
-        listen={heard}
-        onListenChange={setListen}
-        stiffNote={B === 0 ? null : `Stiff string, B = ${formatB(segment.B)}${isArtificial ? ' for the stopped length (B scales as 1/L²)' : ''} (an illustrative value): f_k = k·f₀·√(1 + B·k²), so mode ${modes[modes.length - 1].k} is ${inharmonicityCents(modes[modes.length - 1].k, segment.B).toFixed(1)}¢ sharp of ${modes[modes.length - 1].k}× the fundamental.`}
-      />
-
-      {!isArtificial && (
-        <NaturalHarmonicsPanel
-          openFreq={openFreq}
-          harmonicNumber={harmonicNumber}
+        <PitchDisplay
           noteInfo={noteInfo}
-          touchPoints={naturalPoints}
+          stiffCents={B === 0 ? null : 1200 * Math.log2(currentFreq / idealFreq)}
+          context={pitchContext}
+          playMode={playMode}
+          onTogglePlay={togglePlay}
+        />
+
+        <StringDiagram
+          openFreq={openFreq}
+          playMode={playMode}
+          showVisualize={showVisualize}
+          showFrets={showFrets}
+          waveModes={heardModes}
+          stopPosition={stopPosition}
+          naturalPoints={naturalPoints}
           selectedPosition={selectedPosition}
           onSelectPosition={setSelectedPosition}
-          onHarmonicChange={changeHarmonic}
+          artificialPositions={isArtificial ? artificial.map(h => h.position) : []}
+          artificialIndex={artificialHarmonicIndex}
+          onSelectArtificial={setArtificialHarmonicIndex}
         />
-      )}
 
-      {playMode !== 'natural' && (
-        <ArtificialHarmonicsPanel
-          inputMode={fingerInputMode}
-          onInputModeChange={changeInputMode}
-          fret={fingerPosition}
-          cents={fingerCents}
-          onStopChange={changeStop}
-          harmonics={artificial}
-          selectedIndex={artificialHarmonicIndex}
-          onSelect={setArtificialHarmonicIndex}
-        />
-      )}
-    </div>
+        <div className="columns">
+          <div className="stack">
+            {!isArtificial && (
+              <NaturalHarmonicsPanel
+                openFreq={openFreq}
+                harmonicNumber={harmonicNumber}
+                noteInfo={noteInfo}
+                touchPoints={naturalPoints}
+                selectedPosition={selectedPosition}
+                onSelectPosition={setSelectedPosition}
+                onHarmonicChange={changeHarmonic}
+              />
+            )}
+
+            {playMode !== 'natural' && (
+              <ArtificialHarmonicsPanel
+                inputMode={fingerInputMode}
+                onInputModeChange={changeInputMode}
+                fret={fingerPosition}
+                cents={fingerCents}
+                onStopChange={changeStop}
+                harmonics={artificial}
+                selectedIndex={artificialHarmonicIndex}
+                onSelect={setArtificialHarmonicIndex}
+              />
+            )}
+          </div>
+
+          <SpectrumChart
+            modes={modes}
+            touched={touch !== null}
+            touchLabel={touchLabel}
+            untouchedLabel={isArtificial ? 'Stopped, no touch' : 'Open string'}
+            listen={heard}
+            onListenChange={setListen}
+            stiffNote={B === 0 ? null : `Stiff string, B = ${formatB(segment.B)}${isArtificial ? ' for the stopped length (B scales as 1/L²)' : ''} (an illustrative value): f_k = k·f₀·√(1 + B·k²), so mode ${modes[modes.length - 1].k} is ${inharmonicityCents(modes[modes.length - 1].k, segment.B).toFixed(1)}¢ sharp of ${modes[modes.length - 1].k}× the fundamental.`}
+          />
+        </div>
+
+        <footer className="footer">
+          Equal temperament from A4 = 440 Hz · ideal-string model ·{' '}
+          <a href="https://github.com/mzhao1599/harmonicviz">source and formulas</a>
+        </footer>
+      </main>
+    </HarmonicContext.Provider>
   );
 }

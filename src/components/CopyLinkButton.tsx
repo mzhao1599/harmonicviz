@@ -22,7 +22,7 @@ export function CopyLinkButton() {
 
   return (
     <button type="button" className="toggle-pill" onClick={copy} aria-live="polite">
-      {status === 'copied' ? <Check size={12} aria-hidden="true" /> : <Link size={12} aria-hidden="true" />}
+      {status === 'copied' ? <Check size={13} aria-hidden="true" /> : <Link size={13} aria-hidden="true" />}
       {status === 'copied' ? 'Link copied' : status === 'failed' ? 'Copy failed' : 'Copy link'}
     </button>
   );

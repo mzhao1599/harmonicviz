@@ -1,28 +1,38 @@
 import type { NoteInfo } from '../lib/music';
+import type { PlayMode } from '../types';
+import { PlayButton } from './PlayButton';
 
 interface Props {
   noteInfo: NoteInfo;
   /** How far the stiff string sounds above the ideal one, or null for an ideal string. */
   stiffCents: number | null;
+  /** One line saying what is sounding, e.g. "Harmonic #4 of the G3 string". */
+  context: string;
+  playMode: PlayMode;
+  onTogglePlay: () => void;
 }
 
-export function PitchDisplay({ noteInfo, stiffCents }: Props) {
+export function PitchDisplay({ noteInfo, stiffCents, context, playMode, onTogglePlay }: Props) {
   return (
-    <section className="card-glass" style={{ padding: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>
-      <div className="section-label">Current Pitch</div>
-      <div aria-live="polite" aria-atomic="true">
-        <div className="pitch-note">{noteInfo.note}</div>
-        <div className="pitch-freq" style={{ marginTop: '0.5rem' }}>{noteInfo.freq.toFixed(4)} Hz</div>
-        {Math.abs(noteInfo.cents) > 0.01 && (
-          <div className="pitch-cents" style={{ marginTop: '0.25rem' }}>
-            {noteInfo.cents > 0 ? '+' : ''}{noteInfo.cents.toFixed(4)} cents
-          </div>
-        )}
-        {stiffCents !== null && (
-          <div className="pitch-cents" style={{ marginTop: '0.25rem' }}>
-            stiff string: {stiffCents >= 0 ? '+' : ''}{stiffCents.toFixed(2)} cents vs an ideal string
-          </div>
-        )}
+    <section className="card pitch" aria-label="Current pitch">
+      <PlayButton playMode={playMode} onToggle={onTogglePlay} />
+      <div className="pitch-readout" aria-live="polite" aria-atomic="true">
+        {/* Re-keyed on each new note so it replays the settle animation. */}
+        <span key={noteInfo.note} className="pitch-note settle">{noteInfo.note}</span>
+        <div className="pitch-detail">
+          <span className="pitch-context">{context}</span>
+          <span className="pitch-freq">{noteInfo.freq.toFixed(4)} Hz</span>
+          {Math.abs(noteInfo.cents) > 0.01 && (
+            <span className="pitch-cents">
+              {noteInfo.cents > 0 ? '+' : ''}{noteInfo.cents.toFixed(4)} cents from equal temperament
+            </span>
+          )}
+          {stiffCents !== null && (
+            <span className="pitch-cents">
+              stiff string: {stiffCents >= 0 ? '+' : ''}{stiffCents.toFixed(2)} cents vs an ideal string
+            </span>
+          )}
+        </div>
       </div>
     </section>
   );

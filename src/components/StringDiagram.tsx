@@ -8,6 +8,7 @@ import {
 import { displacement, displacementEnvelope, type Mode } from '../lib/timbre';
 import { usePrefersReducedMotion } from '../hooks/usePrefersReducedMotion';
 import type { PlayMode } from '../types';
+import { SectionTitle } from './SectionTitle';
 
 const SVG_WIDTH = 900;
 const SVG_HEIGHT = 150;
@@ -110,8 +111,8 @@ export function StringDiagram(props: Props) {
   }, [vibrating, waveModes, segmentStart, segmentLength, scale, reducedMotion]);
 
   return (
-    <section className="card-glass" style={{ padding: '1.5rem', marginBottom: '1rem' }}>
-      <div className="section-label">String</div>
+    <section className="card" aria-labelledby="string-title">
+      <SectionTitle id="string-title">String · nut to bridge, to scale</SectionTitle>
       <div className="string-scroll">
         <svg
           viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
@@ -134,36 +135,30 @@ export function StringDiagram(props: Props) {
           {/* Semitone ("fret") lines */}
           {showFrets && FRET_POSITIONS.map((pos, i) => (
             <g key={i} aria-hidden="true">
-              <line x1={toX(pos)} y1={30} x2={toX(pos)} y2={120} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+              <line className="fret-line" x1={toX(pos)} y1={30} x2={toX(pos)} y2={120} />
               {i < 24 && (
-                <text
-                  x={toX(pos)}
-                  y={i % 2 === 0 ? 142 : 16}
-                  fontSize="7"
-                  fontFamily="'JetBrains Mono', monospace"
-                  textAnchor="middle"
-                  fill="rgba(255,255,255,0.18)"
-                >
+                <text className="fret-label" x={toX(pos)} y={i % 2 === 0 ? 142 : 16} textAnchor="middle">
                   {frequencyToNote(frequencyAtSemitone(openFreq, i + 1)).note.slice(0, -1)}
                 </text>
               )}
             </g>
           ))}
 
+          {/* Nut and bridge */}
+          <rect className="string-end" x={STRING_LEFT_X - 4} y={STRING_Y - 18} width="4" height="36" rx="1" aria-hidden="true" />
+          <rect className="string-end" x={STRING_LEFT_X + STRING_LENGTH} y={STRING_Y - 18} width="3" height="36" rx="1" aria-hidden="true" />
+
           {/* Envelope the string moves within */}
           {vibrating && waveModes.length > 0 && (
-            <path d={envelopePath} fill="rgba(201,168,76,0.07)" stroke="none" aria-hidden="true" />
+            <path className="string-envelope" d={envelopePath} aria-hidden="true" />
           )}
 
           {/* String */}
           <path
             ref={pathRef}
+            className="string-line"
             d={FLAT_PATH}
-            stroke="#c9a84c"
-            strokeWidth="2.5"
-            fill="none"
             filter={vibrating ? 'url(#stringGlow)' : undefined}
-            style={{ transition: 'stroke 0.3s ease' }}
           />
 
           {/* Natural harmonic nodes */}
@@ -173,7 +168,7 @@ export function StringDiagram(props: Props) {
             return (
               <g
                 key={i}
-                className="node"
+                className={`node ${selected ? 'selected' : ''}`}
                 role="button"
                 tabIndex={0}
                 aria-pressed={selected}
@@ -182,23 +177,8 @@ export function StringDiagram(props: Props) {
                 onKeyDown={activateOnKey(select)}
               >
                 <circle cx={toX(point.position)} cy={STRING_Y} r="16" fill="transparent" />
-                <circle
-                  className="node-dot"
-                  cx={toX(point.position)}
-                  cy={STRING_Y}
-                  r="7"
-                  fill={selected ? '#c9a84c' : 'rgba(201,168,76,0.25)'}
-                  stroke={selected ? '#e0c876' : 'rgba(201,168,76,0.4)'}
-                  strokeWidth="1.5"
-                />
-                <text
-                  x={toX(point.position)}
-                  y={45}
-                  fontSize="9"
-                  fontFamily="'JetBrains Mono', monospace"
-                  textAnchor="middle"
-                  fill="rgba(201,168,76,0.6)"
-                >
+                <circle className="node-dot" cx={toX(point.position)} cy={STRING_Y} r="7" />
+                <text className="node-label" x={toX(point.position)} y={45} textAnchor="middle">
                   {point.numerator}/{point.denominator}
                 </text>
               </g>
@@ -207,7 +187,7 @@ export function StringDiagram(props: Props) {
 
           {/* Stopping finger */}
           {isArtificial && (
-            <rect x={toX(stopPosition) - 2.5} y={STRING_Y - 14} width="5" height="28" rx="2" fill="#c9a84c" opacity="0.8" />
+            <rect className="stop-finger" x={toX(stopPosition) - 3} y={STRING_Y - 15} width="6" height="30" rx="3" />
           )}
 
           {/* Artificial harmonic nodes */}
@@ -217,7 +197,7 @@ export function StringDiagram(props: Props) {
             return (
               <g
                 key={`artificial-${i}`}
-                className="node"
+                className={`node ${selected ? 'selected' : ''}`}
                 role="button"
                 tabIndex={0}
                 aria-pressed={selected}
@@ -226,24 +206,8 @@ export function StringDiagram(props: Props) {
                 onKeyDown={activateOnKey(select)}
               >
                 <circle cx={toX(position)} cy={STRING_Y} r="12" fill="transparent" />
-                <circle
-                  className="node-dot"
-                  cx={toX(position)}
-                  cy={STRING_Y}
-                  r="7"
-                  fill={selected ? '#c9a84c' : 'rgba(201,168,76,0.2)'}
-                  stroke={selected ? '#e0c876' : 'rgba(201,168,76,0.3)'}
-                  strokeWidth="1.5"
-                />
-                <text
-                  x={toX(position)}
-                  y={i % 2 === 0 ? STRING_Y + 28 : STRING_Y - 14}
-                  fontSize="8"
-                  fontFamily="'JetBrains Mono', monospace"
-                  textAnchor="middle"
-                  fill={selected ? '#c9a84c' : 'rgba(201,168,76,0.45)'}
-                  fontWeight="600"
-                >
+                <circle className="node-dot" cx={toX(position)} cy={STRING_Y} r="7" />
+                <text className="node-label" x={toX(position)} y={i % 2 === 0 ? STRING_Y + 28 : STRING_Y - 14} textAnchor="middle">
                   #{i + 1}
                 </text>
               </g>

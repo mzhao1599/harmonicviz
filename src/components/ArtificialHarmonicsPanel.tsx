@@ -5,6 +5,7 @@ import {
 } from '../lib/music';
 import type { FingerInputMode } from '../types';
 import { DifficultyBadge } from './DifficultyBadge';
+import { SectionTitle } from './SectionTitle';
 
 interface Props {
   inputMode: FingerInputMode;
@@ -19,49 +20,42 @@ interface Props {
   onSelect: (index: number) => void;
 }
 
-const mono = "'JetBrains Mono', monospace";
-
 export function ArtificialHarmonicsPanel({
   inputMode, onInputModeChange, fret, cents, onStopChange, harmonics, selectedIndex, onSelect,
 }: Props) {
   const isStopped = fret > 0 || cents > 0;
 
   return (
-    <section className="card-glass" style={{ padding: '1.5rem' }}>
-      <div className="section-label">Artificial Harmonics</div>
+    <section className="card" aria-labelledby="artificial-title">
+      <SectionTitle id="artificial-title">Artificial harmonics</SectionTitle>
 
-      {/* Input mode toggle */}
-      <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '0.75rem', color: '#6b6460', marginBottom: '0.5rem' }}>Stop Position</div>
-        <div role="group" aria-label="Stop position units" style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => onInputModeChange('fret')}
-            aria-pressed={inputMode === 'fret'}
-            className={`btn btn-sm btn-ghost ${inputMode === 'fret' ? 'active' : ''}`}
-          >
-            Fret Number
-          </button>
-          <button
-            onClick={() => onInputModeChange('cents')}
-            aria-pressed={inputMode === 'cents'}
-            className={`btn btn-sm btn-ghost ${inputMode === 'cents' ? 'active' : ''}`}
-          >
-            Cents Above Base
-          </button>
-        </div>
+      <span className="field-label" id="stop-units-label">Stop position</span>
+      <div className="button-row" role="group" aria-labelledby="stop-units-label">
+        <button
+          type="button"
+          onClick={() => onInputModeChange('fret')}
+          aria-pressed={inputMode === 'fret'}
+          className={`btn btn-sm btn-ghost ${inputMode === 'fret' ? 'active' : ''}`}
+        >
+          Fret Number
+        </button>
+        <button
+          type="button"
+          onClick={() => onInputModeChange('cents')}
+          aria-pressed={inputMode === 'cents'}
+          className={`btn btn-sm btn-ghost ${inputMode === 'cents' ? 'active' : ''}`}
+        >
+          Cents Above Base
+        </button>
       </div>
 
-      {/* Slider */}
       {inputMode === 'fret' ? (
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#6b6460' }}>Fret: 0–12</span>
-            <span style={{ fontFamily: mono, fontSize: '0.875rem', fontWeight: 600, color: fret === 0 ? '#c9a84c' : '#e0d8c8' }}>
-              {fret}{' '}
-              <span style={{ fontSize: '0.75rem', color: '#6b6460', fontWeight: 400 }}>
-                ({fret * 100}¢{fret === 0 ? ' · Natural' : ''})
-              </span>
-            </span>
+        <>
+          <div className="stop-readout">
+            <span>Fret: 0–12</span>
+            <strong className={fret === 0 ? 'natural' : ''}>
+              {fret} <small>({fret * 100}¢{fret === 0 ? ' · Natural' : ''})</small>
+            </strong>
           </div>
           <input
             type="range"
@@ -73,17 +67,14 @@ export function ArtificialHarmonicsPanel({
             aria-valuetext={fret === 0 ? '0, natural harmonics' : `${fret} semitones`}
             onChange={e => onStopChange(parseInt(e.target.value, 10))}
           />
-        </div>
+        </>
       ) : (
-        <div style={{ marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.75rem' }}>
-            <span style={{ fontSize: '0.75rem', color: '#6b6460' }}>Cents: 0–1200</span>
-            <span style={{ fontFamily: mono, fontSize: '0.875rem', fontWeight: 600, color: cents === 0 ? '#c9a84c' : '#e0d8c8' }}>
-              {cents}¢{' '}
-              <span style={{ fontSize: '0.75rem', color: '#6b6460', fontWeight: 400 }}>
-                ({(cents / 100).toFixed(2)} frets{cents === 0 ? ' · Natural' : ''})
-              </span>
-            </span>
+        <>
+          <div className="stop-readout">
+            <span>Cents: 0–1200</span>
+            <strong className={cents === 0 ? 'natural' : ''}>
+              {cents}¢ <small>({(cents / 100).toFixed(2)} frets{cents === 0 ? ' · Natural' : ''})</small>
+            </strong>
           </div>
           <input
             type="range"
@@ -95,55 +86,42 @@ export function ArtificialHarmonicsPanel({
             aria-valuetext={cents === 0 ? '0, natural harmonics' : `${cents} cents`}
             onChange={e => onStopChange(parseInt(e.target.value, 10))}
           />
-        </div>
+        </>
       )}
 
-      {/* Artificial harmonic list */}
       {isStopped && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
+        <div className="harmonic-list">
           {harmonics.map((ah, i) => {
             const difficulty = artificialDifficulty(ah.number);
+            const selected = selectedIndex === i;
             return (
-              <div key={i} className={`harmonic-card ${selectedIndex === i ? 'selected' : ''}`}>
-                <button
-                  type="button"
-                  className="harmonic-card-button"
-                  onClick={() => onSelect(i)}
-                  aria-pressed={selectedIndex === i}
-                >
-                  <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                      <span style={{ fontFamily: mono, fontSize: '0.8125rem', fontWeight: 600, color: selectedIndex === i ? '#c9a84c' : '#9a9088' }}>
-                        #{ah.number}
-                      </span>
-                      <span style={{ fontSize: '0.8125rem', color: '#e0d8c8' }}>{ah.name}</span>
+              <div key={i} className={`harmonic-card ${selected ? 'selected' : ''}`}>
+                <button type="button" className="harmonic-card-button" onClick={() => onSelect(i)} aria-pressed={selected}>
+                  <span className="card-row">
+                    <span className="card-title">
+                      <span className="mono">#{ah.number}</span>
+                      <span>{ah.name}</span>
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="card-difficulty">
                       <DifficultyBadge level={difficulty} />
-                      <span style={{ fontSize: '0.6875rem', color: '#5a534e' }}>{DIFFICULTY_LABELS[difficulty]}</span>
+                      {DIFFICULTY_LABELS[difficulty]}
                     </span>
                   </span>
-
-                  <span style={{ display: 'block', fontFamily: mono, fontSize: '0.75rem', color: '#6b6460', marginTop: '0.25rem' }}>
+                  <span className="card-freq">
                     {ah.resultNote.note} · {ah.resultNote.freq.toFixed(2)} Hz
                     {Math.abs(ah.resultNote.cents) > 0.01 && (
-                      <span style={{ marginLeft: '0.375rem' }}>
-                        {ah.resultNote.cents > 0 ? '+' : ''}{ah.resultNote.cents.toFixed(2)}¢
-                      </span>
+                      <span>{ah.resultNote.cents > 0 ? '+' : ''}{ah.resultNote.cents.toFixed(2)}¢</span>
                     )}
                   </span>
                 </button>
 
-                {selectedIndex === i && ah.number !== 1 && (
+                {selected && ah.number !== 1 && (
                   <div className="guide-box harmonic-card-guide">
-                    <span style={{ color: '#6b6460' }}>Touch at:</span>{' '}
-                    <span style={{ fontFamily: mono, color: '#e0d8c8' }}>
-                      {ah.touchFret === 0 ? 'Open string' : `Fret ${ah.touchFret}`}
-                    </span>
-                    {' '}
-                    <span style={{ color: '#9a9088' }}>({ah.touchNote.note})</span>
+                    <span className="label">Touch at:</span>{' '}
+                    <span className="mono">{ah.touchFret === 0 ? 'Open string' : `Fret ${ah.touchFret}`}</span>{' '}
+                    <span className="note">({ah.touchNote.note})</span>
                     {Math.abs(ah.touchCents) > 0.01 && (
-                      <span style={{ fontFamily: mono, color: '#6b6460', marginLeft: '0.25rem' }}>
+                      <span className="mono muted">
                         {Math.abs(ah.touchCents).toFixed(2)}¢ {ah.touchCents > 0 ? 'higher' : 'lower'}
                       </span>
                     )}
