@@ -33,15 +33,17 @@ export function ArtificialHarmonicsPanel({
       {/* Input mode toggle */}
       <div style={{ marginBottom: '1rem' }}>
         <div style={{ fontSize: '0.75rem', color: '#6b6460', marginBottom: '0.5rem' }}>Stop Position</div>
-        <div style={{ display: 'flex', gap: '0.375rem' }}>
+        <div role="group" aria-label="Stop position units" style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => onInputModeChange('fret')}
+            aria-pressed={inputMode === 'fret'}
             className={`btn btn-sm btn-ghost ${inputMode === 'fret' ? 'active' : ''}`}
           >
             Fret Number
           </button>
           <button
             onClick={() => onInputModeChange('cents')}
+            aria-pressed={inputMode === 'cents'}
             className={`btn btn-sm btn-ghost ${inputMode === 'cents' ? 'active' : ''}`}
           >
             Cents Above Base
@@ -67,6 +69,8 @@ export function ArtificialHarmonicsPanel({
             max="12"
             step="1"
             value={fret}
+            aria-label="Stop position in semitones above the open string"
+            aria-valuetext={fret === 0 ? '0, natural harmonics' : `${fret} semitones`}
             onChange={e => onStopChange(parseInt(e.target.value, 10))}
           />
         </div>
@@ -87,6 +91,8 @@ export function ArtificialHarmonicsPanel({
             max="1200"
             step="1"
             value={cents}
+            aria-label="Stop position in cents above the open string"
+            aria-valuetext={cents === 0 ? '0, natural harmonics' : `${cents} cents`}
             onChange={e => onStopChange(parseInt(e.target.value, 10))}
           />
         </div>
@@ -98,35 +104,38 @@ export function ArtificialHarmonicsPanel({
           {harmonics.map((ah, i) => {
             const difficulty = artificialDifficulty(ah.number);
             return (
-              <div
-                key={i}
-                onClick={() => onSelect(i)}
-                className={`harmonic-card ${selectedIndex === i ? 'selected' : ''}`}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                    <span style={{ fontFamily: mono, fontSize: '0.8125rem', fontWeight: 600, color: selectedIndex === i ? '#c9a84c' : '#9a9088' }}>
-                      #{ah.number}
+              <div key={i} className={`harmonic-card ${selectedIndex === i ? 'selected' : ''}`}>
+                <button
+                  type="button"
+                  className="harmonic-card-button"
+                  onClick={() => onSelect(i)}
+                  aria-pressed={selectedIndex === i}
+                >
+                  <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                      <span style={{ fontFamily: mono, fontSize: '0.8125rem', fontWeight: 600, color: selectedIndex === i ? '#c9a84c' : '#9a9088' }}>
+                        #{ah.number}
+                      </span>
+                      <span style={{ fontSize: '0.8125rem', color: '#e0d8c8' }}>{ah.name}</span>
                     </span>
-                    <span style={{ fontSize: '0.8125rem', color: '#e0d8c8' }}>{ah.name}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <DifficultyBadge level={difficulty} />
-                    <span style={{ fontSize: '0.6875rem', color: '#5a534e' }}>{DIFFICULTY_LABELS[difficulty]}</span>
-                  </div>
-                </div>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <DifficultyBadge level={difficulty} />
+                      <span style={{ fontSize: '0.6875rem', color: '#5a534e' }}>{DIFFICULTY_LABELS[difficulty]}</span>
+                    </span>
+                  </span>
 
-                <div style={{ fontFamily: mono, fontSize: '0.75rem', color: '#6b6460', marginTop: '0.25rem' }}>
-                  {ah.resultNote.note} · {ah.resultNote.freq.toFixed(2)} Hz
-                  {Math.abs(ah.resultNote.cents) > 0.01 && (
-                    <span style={{ marginLeft: '0.375rem' }}>
-                      {ah.resultNote.cents > 0 ? '+' : ''}{ah.resultNote.cents.toFixed(2)}¢
-                    </span>
-                  )}
-                </div>
+                  <span style={{ display: 'block', fontFamily: mono, fontSize: '0.75rem', color: '#6b6460', marginTop: '0.25rem' }}>
+                    {ah.resultNote.note} · {ah.resultNote.freq.toFixed(2)} Hz
+                    {Math.abs(ah.resultNote.cents) > 0.01 && (
+                      <span style={{ marginLeft: '0.375rem' }}>
+                        {ah.resultNote.cents > 0 ? '+' : ''}{ah.resultNote.cents.toFixed(2)}¢
+                      </span>
+                    )}
+                  </span>
+                </button>
 
                 {selectedIndex === i && ah.number !== 1 && (
-                  <div className="guide-box" style={{ marginTop: '0.5rem', fontSize: '0.8125rem' }}>
+                  <div className="guide-box harmonic-card-guide">
                     <span style={{ color: '#6b6460' }}>Touch at:</span>{' '}
                     <span style={{ fontFamily: mono, color: '#e0d8c8' }}>
                       {ah.touchFret === 0 ? 'Open string' : `Fret ${ah.touchFret}`}

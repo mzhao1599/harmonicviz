@@ -10,6 +10,7 @@ import {
   type InstrumentId,
 } from './lib/music';
 import type { FingerInputMode, PlayMode } from './types';
+import { ToneEngine } from './audio/ToneEngine';
 import { InstrumentPicker } from './components/InstrumentPicker';
 import { Controls } from './components/Controls';
 import { PitchDisplay } from './components/PitchDisplay';
@@ -29,10 +30,9 @@ export default function App() {
   const [fingerPosition, setFingerPosition] = useState(0);
   const [fingerCents, setFingerCents] = useState(0);
   const [fingerInputMode, setFingerInputMode] = useState<FingerInputMode>('fret');
-  const [animationPhase, setAnimationPhase] = useState(0);
 
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const oscillatorRef = useRef<OscillatorNode | null>(null);
+  const engineRef = useRef<ToneEngine | null>(null);
+  const engine = () => (engineRef.current ??= new ToneEngine());
 
   const openFreq = openStringFrequency(instrument, selectedString);
   const centsAboveOpen = fingerInputMode === 'fret' ? fingerPosition * 100 : fingerCents;
@@ -46,61 +46,23 @@ export default function App() {
     : openFreq * harmonicNumber;
   const noteInfo = frequencyToNote(currentFreq);
 
-  const stopAudio = () => {
-    if (oscillatorRef.current) {
-      oscillatorRef.current.stop();
-      oscillatorRef.current = null;
-    }
-    if (audioContextRef.current) {
-      audioContextRef.current.close();
-      audioContextRef.current = null;
-    }
-  };
-
-  const playTone = (freq: number) => {
-    stopAudio();
-    const ctx = new AudioContext();
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-    oscillator.start();
-    audioContextRef.current = ctx;
-    oscillatorRef.current = oscillator;
-  };
+  // The frequency that should be sounding right now, or null for silence.
+  const soundingFreq = playMode === 'off' ? null : currentFreq;
 
   useEffect(() => {
-    if (playMode === 'natural') {
-      playTone(openFreq * harmonicNumber);
-    } else if (playMode === 'artificial') {
-      if (isArtificial) {
-        playTone(artificial[artificialHarmonicIndex].resultFreq);
-      } else {
-        stopAudio();
-        setPlayMode('off');
-      }
-    }
-  }, [harmonicNumber, selectedPosition, selectedString, instrument, artificialHarmonicIndex, fingerPosition, fingerCents, fingerInputMode, playMode]);
+    if (soundingFreq === null) engine().stop();
+    else engine().play([{ freq: soundingFreq, amp: 1 }]);
+  }, [soundingFreq]);
 
-  useEffect(() => {
-    if (playMode !== 'off' && showVisualize) {
-      const interval = setInterval(() => {
-        setAnimationPhase(p => (p + 0.1) % (Math.PI * 2));
-      }, 16);
-      return () => clearInterval(interval);
-    }
-  }, [playMode, showVisualize]);
+  useEffect(() => () => engineRef.current?.dispose(), []);
 
-  useEffect(() => stopAudio, []);
+  const stopPlaying = () => setPlayMode('off');
 
   const togglePlay = () => {
     if (playMode !== 'off') {
-      stopAudio();
-      setPlayMode('off');
+      stopPlaying();
     } else {
+      engine().unlock();
       setPlayMode(isArtificial ? 'artificial' : 'natural');
     }
   };
@@ -119,6 +81,8 @@ export default function App() {
     setFingerInputMode(mode);
     if (mode === 'fret') setFingerCents(0);
     else setFingerPosition(0);
+    // Switching modes resets the stop to 0, which ends an artificial harmonic.
+    if (playMode === 'artificial') stopPlaying();
   };
 
   const changeStop = (value: number) => {
@@ -129,10 +93,7 @@ export default function App() {
       setFingerCents(value);
       setFingerPosition(0);
     }
-    if (value === 0 && playMode === 'artificial') {
-      stopAudio();
-      setPlayMode('off');
-    }
+    if (value === 0 && playMode === 'artificial') stopPlaying();
     if (value > 0) {
       setSelectedPosition(null);
       setHarmonicNumber(1);
@@ -180,7 +141,6 @@ export default function App() {
         showVisualize={showVisualize}
         showFrets={showFrets}
         harmonicNumber={harmonicNumber}
-        animationPhase={animationPhase}
         stopPosition={stopPosition}
         naturalPoints={naturalPoints}
         selectedPosition={selectedPosition}

@@ -36,23 +36,28 @@ export function NaturalHarmonicsPanel({
       {/* Navigation */}
       <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1.25rem' }}>
         <button
-          onClick={() => harmonicNumber > 1 && onHarmonicChange(harmonicNumber - 1)}
-          className={`btn btn-ghost btn-icon ${harmonicNumber === 1 ? 'btn-disabled' : ''}`}
+          onClick={() => onHarmonicChange(harmonicNumber - 1)}
+          disabled={harmonicNumber === 1}
+          aria-label="Previous harmonic"
+          className="btn btn-ghost btn-icon"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={16} aria-hidden="true" />
         </button>
         <button
           onClick={() => onHarmonicChange(1)}
           className="btn btn-ghost btn-icon"
           title="Reset"
+          aria-label="Reset to harmonic #1"
         >
-          <RotateCcw size={14} />
+          <RotateCcw size={14} aria-hidden="true" />
         </button>
         <button
-          onClick={() => harmonicNumber < MAX_NATURAL_HARMONIC && onHarmonicChange(harmonicNumber + 1)}
-          className={`btn btn-ghost btn-icon ${harmonicNumber === MAX_NATURAL_HARMONIC ? 'btn-disabled' : ''}`}
+          onClick={() => onHarmonicChange(harmonicNumber + 1)}
+          disabled={harmonicNumber === MAX_NATURAL_HARMONIC}
+          aria-label="Next harmonic"
+          className="btn btn-ghost btn-icon"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={16} aria-hidden="true" />
         </button>
       </div>
 
@@ -104,6 +109,8 @@ export function NaturalHarmonicsPanel({
                 <button
                   key={i}
                   onClick={() => onSelectPosition(point.position)}
+                  aria-pressed={selectedPosition === point.position}
+                  aria-label={`Touch at ${point.numerator}/${point.denominator} of the string`}
                   className={`btn btn-sm font-mono ${selectedPosition === point.position ? 'btn-ghost active' : 'btn-ghost'}`}
                   style={{ fontFamily: mono }}
                 >
@@ -116,7 +123,7 @@ export function NaturalHarmonicsPanel({
               const offset = nearestSemitone(selectedPosition);
               const fretNote = frequencyToNote(frequencyAtSemitone(openFreq, offset.nearestFret));
               return (
-                <div className="guide-box" style={{ marginTop: '0.75rem' }}>
+                <div className="guide-box" style={{ marginTop: '0.75rem' }} aria-live="polite">
                   <div style={{ fontSize: '0.8125rem', color: '#e0d8c8', marginBottom: '0.375rem' }}>
                     <span style={{ color: '#6b6460' }}>Nearest:</span>{' '}
                     <span style={{ fontFamily: mono }}>
