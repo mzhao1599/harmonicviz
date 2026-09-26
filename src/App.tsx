@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import './App.css';
 import {
   INSTRUMENT_STRINGS,
@@ -9,7 +9,8 @@ import {
   openStringFrequency,
   type InstrumentId,
 } from './lib/music';
-import type { FingerInputMode, PlayMode } from './types';
+import { partialAmplitudes, stringModes } from './lib/timbre';
+import type { FingerInputMode, ListenMode, PlayMode } from './types';
 import { ToneEngine } from './audio/ToneEngine';
 import { InstrumentPicker } from './components/InstrumentPicker';
 import { Controls } from './components/Controls';
@@ -17,6 +18,7 @@ import { PitchDisplay } from './components/PitchDisplay';
 import { StringDiagram } from './components/StringDiagram';
 import { NaturalHarmonicsPanel } from './components/NaturalHarmonicsPanel';
 import { ArtificialHarmonicsPanel } from './components/ArtificialHarmonicsPanel';
+import { SpectrumChart } from './components/SpectrumChart';
 
 export default function App() {
   const [instrument, setInstrument] = useState<InstrumentId>('violin');
@@ -30,6 +32,7 @@ export default function App() {
   const [fingerPosition, setFingerPosition] = useState(0);
   const [fingerCents, setFingerCents] = useState(0);
   const [fingerInputMode, setFingerInputMode] = useState<FingerInputMode>('fret');
+  const [listen, setListen] = useState<ListenMode>('touched');
 
   const engineRef = useRef<ToneEngine | null>(null);
   const engine = () => (engineRef.current ??= new ToneEngine());
@@ -46,13 +49,31 @@ export default function App() {
     : openFreq * harmonicNumber;
   const noteInfo = frequencyToNote(currentFreq);
 
-  // The frequency that should be sounding right now, or null for silence.
-  const soundingFreq = playMode === 'off' ? null : currentFreq;
+  // The vibrating length is the whole string, or the part between the stopping
+  // finger and the bridge. Touch points are fractions of that length.
+  const vibratingF0 = isArtificial ? artificial[0].resultFreq : openFreq;
+  const touch = isArtificial
+    ? (artificialHarmonicIndex === 0 ? null : 1 / (artificialHarmonicIndex + 1))
+    : (harmonicNumber === 1 ? null : selectedPosition ?? 1 / harmonicNumber);
+  const touchLabel = isArtificial
+    ? `the node for #${artificialHarmonicIndex + 1}`
+    : selectedPosition === null
+      ? `1/${harmonicNumber} of the string`
+      : `${naturalPoints.find(p => p.position === selectedPosition)?.numerator ?? 1}/${harmonicNumber} of the string`;
+
+  const modes = useMemo(() => stringModes({ f0: vibratingF0, touch }), [vibratingF0, touch]);
+  const heard = touch !== null && listen === 'open' ? 'open' : 'touched';
+
+  // What should be sounding right now, or null for silence.
+  const partials = useMemo(
+    () => (playMode === 'off' ? null : partialAmplitudes(heard === 'open' ? modes.map(m => ({ ...m, survives: true })) : modes)),
+    [playMode, heard, modes],
+  );
 
   useEffect(() => {
-    if (soundingFreq === null) engine().stop();
-    else engine().play([{ freq: soundingFreq, amp: 1 }]);
-  }, [soundingFreq]);
+    if (partials === null) engine().stop();
+    else engine().play(partials);
+  }, [partials]);
 
   useEffect(() => () => engineRef.current?.dispose(), []);
 
@@ -148,6 +169,15 @@ export default function App() {
         artificialPositions={isArtificial ? artificial.map(h => h.position) : []}
         artificialIndex={artificialHarmonicIndex}
         onSelectArtificial={setArtificialHarmonicIndex}
+      />
+
+      <SpectrumChart
+        modes={modes}
+        touched={touch !== null}
+        touchLabel={touchLabel}
+        untouchedLabel={isArtificial ? 'Stopped, no touch' : 'Open string'}
+        listen={heard}
+        onListenChange={setListen}
       />
 
       {!isArtificial && (

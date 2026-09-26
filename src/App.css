@@ -402,6 +402,144 @@ input[type="range"]::-moz-range-thumb {
   background: rgba(255, 255, 255, 0.14);
 }
 
+/* ─── Spectrum Chart ──────────────────────────────────────── */
+
+.spectrum {
+  --bar-kept: #b38c35;
+  --bar-removed: #6e6a62;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.spectrum-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.spectrum-caption {
+  margin: -0.25rem 0 0;
+  max-width: 34rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #9a9088;
+}
+
+.segmented {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.spectrum-legend {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin: 1rem 0 0.5rem;
+  font-size: 0.75rem;
+  color: #9a9088;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 0.375rem;
+  border-radius: 2px;
+  vertical-align: -1px;
+}
+
+.swatch-kept { background: var(--bar-kept); }
+.swatch-removed { background: var(--bar-removed); }
+
+.spectrum-plot {
+  position: relative;
+}
+
+.spectrum-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.spectrum-grid {
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 1;
+}
+
+.spectrum-tick {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  fill: #6b6460;
+  font-variant-numeric: tabular-nums;
+}
+
+.spectrum-bar {
+  transition: fill 0.25s ease, opacity 0.25s ease;
+}
+
+.spectrum-bar.kept { fill: var(--bar-kept); }
+.spectrum-bar.removed { fill: var(--bar-removed); opacity: 0.55; }
+.spectrum-bar.hovered { opacity: 1; filter: brightness(1.25); }
+
+.spectrum-tooltip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));
+  padding: 0.375rem 0.625rem;
+  border-radius: 6px;
+  background: #1c1b24;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.6875rem;
+  line-height: 1.5;
+  color: #e0d8c8;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.link-button {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.75rem;
+  color: #9a9088;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.link-button:hover { color: #e0d8c8; }
+
+.spectrum-table-wrap {
+  max-height: 16rem;
+  overflow: auto;
+  margin-top: 0.5rem;
+}
+
+.spectrum-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: #9a9088;
+}
+
+.spectrum-table th,
+.spectrum-table td {
+  padding: 0.25rem 0.5rem;
+  text-align: right;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.spectrum-table th {
+  font-weight: 500;
+  color: #6b6460;
+}
+
 /* ─── Small screens ───────────────────────────────────────── */
 
 @media (max-width: 640px) {
