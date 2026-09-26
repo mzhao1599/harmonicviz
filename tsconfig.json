@@ -16,7 +16,6 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* THE PART YOU WERE MISSING */
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
