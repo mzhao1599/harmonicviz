@@ -38,7 +38,7 @@ Everything comes from an ideal string of length *L* whose open pitch is *f₀*. 
 | Stopped note, *c* cents above open | f_s = f₀ · 2^(c/1200), stopped at x_s = (1 − 2^(−c/1200)) · L | `calculateArtificialHarmonics`, `getStopPosition` |
 | Artificial touch point for harmonic *n* | x_s + (L − x_s)/n, sounding n · f_s | `calculateArtificialHarmonics` |
 
-The gcd filter matters: touching at 2/4 of the string gives the 2nd harmonic, not the 4th, so each harmonic lists only the fractions in lowest terms. The cents readouts are what make the app useful for practice. On the violin G string, the 1/4 node is 1.96 cents below the 5th semitone position (C4). On any string, the 5th harmonic (a pure major third, two octaves up) sounds 13.69 cents below its equal-tempered note.
+The gcd filter matters: touching at 2/4 of the string gives the 2nd harmonic, not the 4th, so each harmonic lists only the fractions in lowest terms. On the violin G string, the 1/4 node is 1.96 cents below the 5th semitone position (C4). On any string, the 5th harmonic (a pure major third, two octaves up) sounds 13.69 cents below its equal-tempered note.
 
 ## How it is built
 
