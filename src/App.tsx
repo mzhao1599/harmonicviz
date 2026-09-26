@@ -10,6 +10,7 @@ import {
   type InstrumentId,
 } from './lib/music';
 import { partialAmplitudes, stringModes } from './lib/timbre';
+import { decodeState, encodeState } from './lib/urlState';
 import type { FingerInputMode, ListenMode, PlayMode } from './types';
 import { ToneEngine } from './audio/ToneEngine';
 import { InstrumentPicker } from './components/InstrumentPicker';
@@ -21,17 +22,21 @@ import { ArtificialHarmonicsPanel } from './components/ArtificialHarmonicsPanel'
 import { SpectrumChart } from './components/SpectrumChart';
 
 export default function App() {
-  const [instrument, setInstrument] = useState<InstrumentId>('violin');
-  const [selectedString, setSelectedString] = useState('G3');
+  // The instrument, string, harmonic and stop come from the URL, so links can be shared.
+  const [initial] = useState(() => decodeState(window.location.search));
+  const [instrument, setInstrument] = useState<InstrumentId>(initial.instrument);
+  const [selectedString, setSelectedString] = useState(initial.string);
   const [playMode, setPlayMode] = useState<PlayMode>('off');
   const [showVisualize, setShowVisualize] = useState(true);
   const [showFrets, setShowFrets] = useState(true);
-  const [harmonicNumber, setHarmonicNumber] = useState(1);
-  const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
-  const [artificialHarmonicIndex, setArtificialHarmonicIndex] = useState(0);
-  const [fingerPosition, setFingerPosition] = useState(0);
-  const [fingerCents, setFingerCents] = useState(0);
-  const [fingerInputMode, setFingerInputMode] = useState<FingerInputMode>('fret');
+  const [harmonicNumber, setHarmonicNumber] = useState(initial.harmonic);
+  const [selectedPosition, setSelectedPosition] = useState<number | null>(
+    initial.touch === null ? null : initial.touch / initial.harmonic,
+  );
+  const [artificialHarmonicIndex, setArtificialHarmonicIndex] = useState(initial.artificial - 1);
+  const [fingerPosition, setFingerPosition] = useState(initial.stopMode === 'fret' ? initial.stop : 0);
+  const [fingerCents, setFingerCents] = useState(initial.stopMode === 'cents' ? initial.stop : 0);
+  const [fingerInputMode, setFingerInputMode] = useState<FingerInputMode>(initial.stopMode);
   const [listen, setListen] = useState<ListenMode>('touched');
 
   const engineRef = useRef<ToneEngine | null>(null);
@@ -81,6 +86,21 @@ export default function App() {
   }, [partials]);
 
   useEffect(() => () => engineRef.current?.dispose(), []);
+
+  const shareQuery = encodeState({
+    instrument,
+    string: selectedString,
+    harmonic: harmonicNumber,
+    touch: naturalPoints.find(p => p.position === selectedPosition)?.numerator ?? null,
+    stopMode: fingerInputMode,
+    stop: fingerInputMode === 'fret' ? fingerPosition : fingerCents,
+    artificial: artificialHarmonicIndex + 1,
+  });
+
+  useEffect(() => {
+    const { pathname, hash } = window.location;
+    window.history.replaceState(window.history.state, '', `${pathname}?${shareQuery}${hash}`);
+  }, [shareQuery]);
 
   const stopPlaying = () => setPlayMode('off');
 

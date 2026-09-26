@@ -1,5 +1,6 @@
 import { Play, Pause } from 'lucide-react';
 import type { PlayMode } from '../types';
+import { CopyLinkButton } from './CopyLinkButton';
 
 interface Props {
   playMode: PlayMode;
@@ -42,6 +43,8 @@ export function Controls({ playMode, onTogglePlay, showVisualize, onToggleVisual
           <span className="dot" aria-hidden="true" />
           Frets
         </button>
+
+        <CopyLinkButton />
       </div>
     </section>
   );
