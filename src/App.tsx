@@ -41,7 +41,7 @@ export default function App() {
   const artificial = artificialHarmonics(openFreq, centsAboveOpen);
   const naturalPoints = naturalTouchPoints(harmonicNumber);
 
-  const currentFreq = playMode === 'artificial'
+  const currentFreq = isArtificial
     ? artificial[artificialHarmonicIndex].resultFreq
     : openFreq * harmonicNumber;
   const noteInfo = frequencyToNote(currentFreq);
