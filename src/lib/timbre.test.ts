@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_MODES,
   MAX_PARTIAL_FREQ,
+  displacement,
+  displacementEnvelope,
   hasNodeAt,
   helmholtzBridgeForce,
   helmholtzDisplacement,
@@ -90,5 +92,31 @@ describe('bowed-string spectrum', () => {
 describe('modeFrequency', () => {
   it('is k·f0 for an ideal string', () => {
     expect(modeFrequency(5, 100)).toBe(500);
+  });
+});
+
+describe('standing wave', () => {
+  const all = stringModes({ f0: 1, touch: null, maxModes: 400, maxFreq: Infinity });
+  const quarter = stringModes({ f0: 1, touch: 1 / 4, maxModes: 400, maxFreq: Infinity }).filter(m => m.survives);
+
+  it('is Helmholtz motion: a straight-sided triangle with its corner at s = 2·f0·t', () => {
+    // Σ sin(kπx)·sin(kπs)/k² = (π²/2)·x·(1 − s) for x ≤ s, the Fourier series of a triangle.
+    const t = 0.3 / 2; // corner at s = 0.3
+    for (const x of [0.1, 0.2, 0.3]) expect(displacement(all, x, t)).toBeCloseTo((Math.PI ** 2 / 2) * x * 0.7, 2);
+    for (const x of [0.5, 0.8]) expect(displacement(all, x, t)).toBeCloseTo((Math.PI ** 2 / 2) * 0.3 * (1 - x), 2);
+  });
+
+  it('stays still at every node of the touched string', () => {
+    for (const x of [0, 1 / 4, 1 / 2, 3 / 4, 1]) {
+      for (const t of [0.01, 0.1, 0.37]) expect(Math.abs(displacement(quarter, x, t))).toBeLessThan(1e-9);
+    }
+    expect(Math.abs(displacement(quarter, 1 / 8, 0.03))).toBeGreaterThan(1e-3);
+  });
+
+  it('has the Helmholtz parabola as its envelope', () => {
+    const env = displacementEnvelope(all, 10, 400);
+    // The corner at s traces a height of (π²/2)·s·(1 − s).
+    for (const i of [2, 5, 7]) expect(env[i]).toBeCloseTo((Math.PI ** 2 / 2) * (i / 10) * (1 - i / 10), 1);
+    expect(env[0]).toBeCloseTo(0, 9);
   });
 });

@@ -64,10 +64,15 @@ export default function App() {
   const modes = useMemo(() => stringModes({ f0: vibratingF0, touch }), [vibratingF0, touch]);
   const heard = touch !== null && listen === 'open' ? 'open' : 'touched';
 
+  const heardModes = useMemo(
+    () => (heard === 'open' ? modes : modes.filter(m => m.survives)),
+    [heard, modes],
+  );
+
   // What should be sounding right now, or null for silence.
   const partials = useMemo(
-    () => (playMode === 'off' ? null : partialAmplitudes(heard === 'open' ? modes.map(m => ({ ...m, survives: true })) : modes)),
-    [playMode, heard, modes],
+    () => (playMode === 'off' ? null : partialAmplitudes(heardModes.map(m => ({ ...m, survives: true })))),
+    [playMode, heardModes],
   );
 
   useEffect(() => {
@@ -161,7 +166,7 @@ export default function App() {
         playMode={playMode}
         showVisualize={showVisualize}
         showFrets={showFrets}
-        harmonicNumber={harmonicNumber}
+        waveModes={heardModes}
         stopPosition={stopPosition}
         naturalPoints={naturalPoints}
         selectedPosition={selectedPosition}

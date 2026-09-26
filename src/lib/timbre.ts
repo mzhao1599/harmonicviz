@@ -83,3 +83,33 @@ export function partialAmplitudes(modes: Mode[]): { freq: number; amp: number }[
 export function levelDb(mode: Mode): number {
   return 20 * Math.log10(mode.sound);
 }
+
+/**
+ * String displacement at x (0..1 along the vibrating length) and time t for
+ * Helmholtz motion: y = Σ a_k · sin(kπx) · sin(2π f_k t), a_k = 1/k², over the
+ * given modes. With all modes this is a single kink running round a
+ * parallelogram; with only multiples of n it is n copies of that, one per segment.
+ */
+export function displacement(modes: Mode[], x: number, t: number): number {
+  let y = 0;
+  for (const m of modes) y += m.displacement * Math.sin(m.k * Math.PI * x) * Math.sin(2 * Math.PI * m.freq * t);
+  return y;
+}
+
+/**
+ * Largest |displacement| at each of `points` evenly spaced positions, sampled
+ * over one period of the lowest mode. Used to scale the drawing and outline
+ * the envelope the string moves within.
+ */
+export function displacementEnvelope(modes: Mode[], points: number, timeSamples = 64): number[] {
+  const envelope = new Array<number>(points + 1).fill(0);
+  if (modes.length === 0) return envelope;
+  const period = 1 / modes[0].freq;
+  for (let s = 0; s < timeSamples; s++) {
+    const t = (s / timeSamples) * period;
+    for (let i = 0; i <= points; i++) {
+      envelope[i] = Math.max(envelope[i], Math.abs(displacement(modes, i / points, t)));
+    }
+  }
+  return envelope;
+}
